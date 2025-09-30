@@ -163,7 +163,7 @@ describe('get-jest-config', () => {
 
       // The module being tested should be imported dynamically
       const { getJestConfig } = await import('../src/lib/get-jest-config')
-      const result = await getJestConfig('libs/project-a', 'yarn')
+      const result = await getJestConfig('libs/project-a')
 
       // Verify exec was called with npx (now always using npx regardless of package manager)
       expect(exec.exec).toHaveBeenCalledWith(
