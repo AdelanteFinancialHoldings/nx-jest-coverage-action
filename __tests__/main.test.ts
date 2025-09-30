@@ -4,19 +4,19 @@
  * Using jest.unstable_mockModule for mocking dependencies and dynamic imports
  * for the module under test.
  */
-import { jest, describe, beforeEach, it, expect } from '@jest/globals'
+import { beforeEach, describe, expect, it, jest } from '@jest/globals'
 import * as core from '../__fixtures__/core'
 import {
   mockAffectedProjects,
-  mockProjectCoverages,
-  mockCoverageSummary
+  mockCoverageSummary,
+  mockProjectCoverages
 } from '../__fixtures__/coverage-data'
-import { mockJestConfig } from '../__fixtures__/jest-config'
 import { mockContext } from '../__fixtures__/github'
-import type * as affectedProjectsOriginal from '../src/lib/get-affected-projects'
-import type * as getJestConfigOriginal from '../src/lib/get-jest-config'
-import type * as getCoverageDataOriginal from '../src/lib/get-coverage-data'
+import { mockJestConfig } from '../__fixtures__/jest-config'
 import type * as generateReportOriginal from '../src/lib/generate-report'
+import type * as affectedProjectsOriginal from '../src/lib/get-affected-projects'
+import type * as getCoverageDataOriginal from '../src/lib/get-coverage-data'
+import type * as getJestConfigOriginal from '../src/lib/get-jest-config'
 import type * as prCommentOriginal from '../src/lib/pr-comment'
 
 // Type definitions for mocks
@@ -69,7 +69,9 @@ const prComment = {
 // Mocks should be declared before the module being tested is imported
 jest.unstable_mockModule('@actions/core', () => core)
 jest.unstable_mockModule('@actions/exec', () => exec)
-jest.unstable_mockModule('@actions/github', () => ({ context: github.context }))
+jest.unstable_mockModule('@actions/github', () => ({
+  context: github.context
+}))
 jest.unstable_mockModule(
   '../src/lib/get-affected-projects',
   () => getAffectedProjects

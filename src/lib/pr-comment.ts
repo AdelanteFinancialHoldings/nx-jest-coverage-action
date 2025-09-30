@@ -43,8 +43,8 @@ export async function upsertPRComment({
     console.log('Total PR comments:', comments.length)
 
     // Find an existing comment with our anchor
-    const existingComment = comments.find(
-      (comment) => comment.body && comment.body.includes(reportAnchor)
+    const existingComment = comments.find((comment) =>
+      comment.body?.includes(reportAnchor)
     )
 
     console.log('Existing comment:', existingComment)

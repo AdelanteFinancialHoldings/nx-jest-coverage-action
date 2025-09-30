@@ -1,9 +1,9 @@
 # NX Jest Coverage Action
 
-[![GitHub Super-Linter](https://github.com/sebastiandg7/nx-jest-coverage-action/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
-![CI](https://github.com/sebastiandg7/nx-jest-coverage-action/actions/workflows/ci.yml/badge.svg)
-[![Check dist/](https://github.com/sebastiandg7/nx-jest-coverage-action/actions/workflows/check-dist.yml/badge.svg)](https://github.com/sebastiandg7/nx-jest-coverage-action/actions/workflows/check-dist.yml)
-[![CodeQL](https://github.com/sebastiandg7/nx-jest-coverage-action/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/sebastiandg7/nx-jest-coverage-action/actions/workflows/codeql-analysis.yml)
+[![GitHub Super-Linter](https://github.com/AdelanteFinancialHoldings/nx-jest-coverage-action/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
+![CI](https://github.com/AdelanteFinancialHoldings/nx-jest-coverage-action/actions/workflows/ci.yml/badge.svg)
+[![Check dist/](https://github.com/AdelanteFinancialHoldings/nx-jest-coverage-action/actions/workflows/check-dist.yml/badge.svg)](https://github.com/AdelanteFinancialHoldings/nx-jest-coverage-action/actions/workflows/check-dist.yml)
+[![CodeQL](https://github.com/AdelanteFinancialHoldings/nx-jest-coverage-action/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/AdelanteFinancialHoldings/nx-jest-coverage-action/actions/workflows/codeql-analysis.yml)
 [![Coverage](./badges/coverage.svg)](./badges/coverage.svg)
 
 A GitHub Action that generates Jest test coverage reports for affected projects
@@ -18,11 +18,27 @@ coverage changes across your monorepo projects.
 - 💬 Posts coverage reports as PR comments with beautiful badges
 - 📈 Calculates average coverage metrics across all affected projects
 - 🔄 Updates existing PR comments to avoid cluttering your PRs
+- 🎨 Color-coded badges based on coverage thresholds (red < 70%, yellow < 80%,
+  green ≥ 80%)
+
+## How It Works
+
+1. **Detects Affected Projects**: Uses NX to identify projects affected by PR
+   changes
+1. **Filters Jest Projects**: Only processes projects configured with Jest as
+   their test executor
+1. **Runs Tests** (optional): Can run tests before generating the report if
+   `run-tests: true`
+1. **Collects Coverage Data**: Reads Jest coverage summaries from each project
+1. **Generates Report**: Creates a formatted Markdown report with badges and
+   tables
+1. **Posts to PR**: Updates or creates a PR comment with the coverage report
 
 ## Prerequisites
 
-- NX workspace with Jest configured for testing
-- Jest configured with `json-summary` coverage reporter
+- NX workspace (v15+) with Jest configured for testing
+- Jest configured with `json-summary` coverage reporter in your Jest config
+- GitHub Actions workflow with pull request permissions
 
 ## Usage
 
@@ -34,6 +50,10 @@ name: Coverage Report
 on:
   pull_request:
     branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   coverage:
@@ -53,24 +73,39 @@ jobs:
         run: npm ci
 
       - name: Generate coverage report
-        uses: sebastiandg7/nx-jest-coverage-action@v1
+        uses: AdelanteFinancialHoldings/nx-jest-coverage-action@v1
         with:
           workspace-location: '.'
           run-tests: true
-          package-manager: 'npm' # Options: npm, yarn, pnpm
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+## Jest Configuration
+
+To use this action, ensure your Jest configuration includes the `json-summary`
+reporter. Add this to your `jest.config.js` or project-level Jest configuration:
+
+```javascript
+module.exports = {
+  // ... other config
+  coverageReporters: ['json-summary', 'text', 'lcov']
+  // ... other config
+}
+```
+
+The action will automatically detect the coverage directory from your Jest
+configuration.
 
 ## Inputs
 
 This action accepts the following inputs:
 
-| Name                        | Description                                                      | Required | Default                                   |
-| --------------------------- | ---------------------------------------------------------------- | -------- | ----------------------------------------- |
-| `workspace-location`        | The location of the NX workspace relative to the repository root | No       | `.`                                       |
-| `affected-projects-command` | Custom command to detect affected projects                       | No       | `nx affected -t=test --graph=stdout`      |
-| `run-tests`                 | Whether to run the test target before building the report        | No       | `false`                                   |
-| `report-anchor`             | Anchor key used to upsert the PR comment with the report         | No       | `<!-- nx-jest-coverage-action report -->` |
-| `package-manager`           | Package manager to use for running NX commands (npm, yarn, pnpm) | No       | `npm`                                     |
+| Name                 | Description                                                      | Required | Default                                   |
+| -------------------- | ---------------------------------------------------------------- | -------- | ----------------------------------------- |
+| `workspace-location` | The location of the NX workspace relative to the repository root | false    | `.`                                       |
+| `github-token`       | GitHub token for posting PR comments                             | false    | `${{ github.token }}`                     |
+| `run-tests`          | Whether to run the test target before building the report        | false    | `false`                                   |
+| `report-anchor`      | Anchor key used to upsert the PR comment with the report         | false    | `<!-- nx-jest-coverage-action report -->` |
 
 ## Outputs
 
@@ -81,22 +116,42 @@ This action accepts the following inputs:
 ## PR Comment Example
 
 When the action runs successfully, it will post a comment to your PR with
-coverage information for all affected projects. The comment will look similar to
-this:
+coverage information for all affected projects. The comment includes:
 
+- **Coverage badges** for statements, branches, functions, and lines
+  (color-coded based on coverage percentage)
+- **Coverage summary** showing average coverage across all affected projects
+- **Project details** in collapsible sections for each affected project
+
+Example format:
+
+```markdown
+# Jest Coverage Report 🧪📊
+
+![statements: 85%](https://img.shields.io/badge/statements-85%25-yellow)
+![branches: 75%](https://img.shields.io/badge/branches-75%25-yellow)
+![functions: 90%](https://img.shields.io/badge/functions-90%25-green)
+![lines: 85%](https://img.shields.io/badge/lines-85%25-yellow)
+
+## Coverage Summary
+
+| Statements | Branches | Functions | Lines |
+| ---------- | -------- | --------- | ----- |
+| 85%        | 75%      | 90%       | 85%   |
+
+## Project Coverage Details
+
+<details>
+<summary>project-a</summary>
+
+| Statements | Branches | Functions | Lines |
+| ---------- | -------- | --------- | ----- |
+| 85%        | 75%      | 90%       | 85%   |
+
+</details>
+
+<sub>Last updated: 2024-01-01T00:00:00.000Z</sub>
 ```
-# NX Jest Coverage Report
-
-## Summary
-
-| Project | Statements | Branches | Functions | Lines |
-|---------|------------|----------|-----------|-------|
-| project-a | 95.2% | 87.5% | 100% | 94.7% |
-| project-b | 98.7% | 92.3% | 97.8% | 98.6% |
-| Average | 96.95% | 89.9% | 98.9% | 96.65% |
-```
-
-_Note: Replace this with an actual screenshot when available._
 
 ## Contributing
 
@@ -105,11 +160,10 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ### Development
 
 1. Clone this repository
-2. Install dependencies with `npm ci`
-3. Make your changes
-4. Run tests with `npm test`
-5. Build the action with `npm run build`
-6. Commit your changes following
+1. Install dependencies with `npm ci`
+1. Make your changes
+1. Verify everything is working with `npm run all`
+1. Commit your changes following
    [Conventional Commits](https://www.conventionalcommits.org/)
 
 ### Code of Conduct

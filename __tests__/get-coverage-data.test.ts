@@ -1,10 +1,10 @@
-import { jest, describe, beforeEach, it, expect } from '@jest/globals'
+import { beforeEach, describe, expect, it, jest } from '@jest/globals'
 import * as core from '../__fixtures__/core'
 import {
-  mockProjectCoverages,
-  mockEmptyCoverageSummary
+  mockEmptyCoverageSummary,
+  mockProjectCoverages
 } from '../__fixtures__/coverage-data'
-import { ProjectCoverage } from '../src/lib/get-coverage-data'
+import type { ProjectCoverage } from '../src/lib/get-coverage-data'
 
 // Mock fs module
 const fs = {

@@ -1,8 +1,8 @@
-import { describe, beforeAll, afterAll, it, expect } from '@jest/globals'
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals'
 import {
   mockCoverageSummary,
-  mockProjectCoverages,
-  mockEmptyCoverageSummary
+  mockEmptyCoverageSummary,
+  mockProjectCoverages
 } from '../__fixtures__/coverage-data'
 
 // The module being tested should be imported dynamically

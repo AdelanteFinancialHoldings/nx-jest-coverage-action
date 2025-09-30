@@ -1,4 +1,4 @@
-import { ProjectCoverage, CoverageSummary } from './get-coverage-data.js'
+import type { CoverageSummary, ProjectCoverage } from './get-coverage-data.js'
 
 /**
  * Generates a badge color based on coverage percentage

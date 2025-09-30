@@ -27,9 +27,9 @@ import require$$6 from 'string_decoder';
 import require$$0$9 from 'diagnostics_channel';
 import require$$2$3 from 'child_process';
 import require$$6$1 from 'timers';
+import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import * as fs from 'node:fs';
-import * as fs$1 from 'node:fs/promises';
+import * as fs$1 from 'node:fs';
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -31239,230 +31239,6 @@ function requireGithub () {
 var githubExports = requireGithub();
 
 /**
- * Gets the list of affected projects that use Jest for testing
- * @param affectedProjectsCommand The command to run to get affected projects
- * @param packageManager The package manager to use (npm, yarn, or pnpm)
- * @returns A list of affected projects with Jest as test executor
- */
-async function getAffectedProjects(affectedProjectsCommand, packageManager = 'npm') {
-    coreExports.debug(`Using command: ${affectedProjectsCommand}`);
-    // Create a buffer to store the command output
-    let outputBuffer = '';
-    // Execute the command and capture the output
-    const options = {
-        silent: true, // Always silent in tests
-        listeners: {
-            stdout: (data) => {
-                outputBuffer += data.toString();
-                // Debug output
-                coreExports.debug(data.toString());
-            },
-            stderr: (data) => {
-                // Debug stderr output
-                coreExports.debug(`stderr: ${data.toString()}`);
-            }
-        }
-    };
-    try {
-        // Check if the command starts with nx
-        const commandParts = affectedProjectsCommand.split(' ');
-        const isNxCommand = commandParts[0] === 'nx';
-        coreExports.debug(`Using package manager: ${packageManager}`);
-        if (isNxCommand) {
-            // Always use npx regardless of package manager
-            coreExports.debug(`Executing: npx ${commandParts.join(' ')}`);
-            await execExports.exec('npx', commandParts, options);
-        }
-        else {
-            coreExports.debug(`Executing: ${commandParts.join(' ')}`);
-            await execExports.exec(commandParts[0], commandParts.slice(1), options);
-        }
-    }
-    catch (error) {
-        coreExports.warning(`Error executing affected projects command: ${error instanceof Error ? error.message : String(error)}`);
-        return [];
-    }
-    try {
-        // Parse the JSON output
-        const affectedOutput = JSON.parse(outputBuffer);
-        // Filter projects that use Jest as test executor
-        const jestProjects = Object.values(affectedOutput.graph.nodes)
-            .filter((node) => node.data.targets?.test?.executor === '@nx/jest:jest' ||
-            node.data.targets?.test?.executor === '@nrwl/jest:jest')
-            .map((node) => ({
-            name: node.name,
-            root: node.data.root
-        }));
-        coreExports.debug(`Found ${jestProjects.length} affected projects using Jest`);
-        return jestProjects;
-    }
-    catch (error) {
-        coreExports.error(`Error parsing affected projects output: ${error instanceof Error ? error.message : String(error)}`);
-        coreExports.debug(`Output buffer: ${outputBuffer}`);
-        return [];
-    }
-}
-
-/**
- * Gets the Jest configuration for a project
- * @param projectRoot The root path of the project
- * @returns The Jest configuration or null if not found
- */
-async function getJestConfig(projectRoot) {
-    coreExports.debug(`Getting Jest config for project at: ${projectRoot}`);
-    // Create a buffer to store the command output
-    let outputBuffer = '';
-    // Execute the command and capture the output
-    const options = {
-        cwd: projectRoot,
-        silent: true, // Always silent in tests
-        listeners: {
-            stdout: (data) => {
-                outputBuffer += data.toString();
-                // Debug output if debug is enabled
-                coreExports.debug(data.toString());
-            },
-            stderr: (data) => {
-                // Debug stderr output
-                coreExports.debug(`stderr: ${data.toString()}`);
-            }
-        }
-    };
-    try {
-        // Always use npx regardless of package manager
-        coreExports.debug(`Executing: npx jest --showConfig in ${projectRoot}`);
-        await execExports.exec('npx', ['jest', '--showConfig'], options);
-    }
-    catch (error) {
-        coreExports.warning(`Error getting Jest config: ${error instanceof Error ? error.message : String(error)}`);
-        return null;
-    }
-    try {
-        // Parse the JSON output
-        const jestConfig = JSON.parse(outputBuffer);
-        // Check if the config has the required properties
-        if (!jestConfig.globalConfig.coverageDirectory) {
-            coreExports.warning(`No coverage directory found in Jest config for ${projectRoot}`);
-            return null;
-        }
-        if (!jestConfig.globalConfig.coverageReporters?.includes('json-summary')) {
-            coreExports.warning(`json-summary reporter not found in Jest config for ${projectRoot}`);
-            return null;
-        }
-        return jestConfig;
-    }
-    catch (error) {
-        coreExports.error(`Error parsing Jest config: ${error instanceof Error ? error.message : String(error)}`);
-        coreExports.debug(`Output buffer: ${outputBuffer}`);
-        return null;
-    }
-}
-/**
- * Checks if a coverage summary file exists for a project
- * @param coverageDirectory The coverage directory path
- * @returns True if the coverage summary file exists, false otherwise
- */
-async function hasCoverageSummary(coverageDirectory) {
-    const coverageSummaryPath = path.join(coverageDirectory, 'coverage-summary.json');
-    try {
-        fs.accessSync(coverageSummaryPath);
-        return true;
-    }
-    catch {
-        coreExports.warning(`Coverage summary file not found at ${coverageSummaryPath}`);
-        return false;
-    }
-}
-
-/**
- * Gets the coverage data for a project
- * @param projectName The name of the project
- * @param projectRoot The root path of the project
- * @param coverageDirectory The coverage directory path (absolute path)
- * @returns The coverage data for the project or null if not found
- */
-async function getProjectCoverage(projectName, projectRoot, coverageDirectory) {
-    const coverageSummaryPath = path.join(coverageDirectory, 'coverage-summary.json');
-    try {
-        const coverageSummaryContent = await fs$1.readFile(coverageSummaryPath, 'utf-8');
-        const coverageSummary = JSON.parse(coverageSummaryContent);
-        if (!coverageSummary.total) {
-            coreExports.warning(`No total coverage data found in ${coverageSummaryPath}`);
-            return null;
-        }
-        return {
-            projectName,
-            projectRoot,
-            coverageData: coverageSummary.total
-        };
-    }
-    catch (error) {
-        coreExports.warning(`Error reading coverage summary for ${projectName}: ${error instanceof Error ? error.message : String(error)}`);
-        return null;
-    }
-}
-/**
- * Calculates the average coverage across all projects
- * @param projectCoverages The coverage data for all projects
- * @returns The average coverage data
- */
-function calculateAverageCoverage(projectCoverages) {
-    if (projectCoverages.length === 0) {
-        return {
-            lines: { total: 0, covered: 0, skipped: 0, pct: 0 },
-            statements: { total: 0, covered: 0, skipped: 0, pct: 0 },
-            functions: { total: 0, covered: 0, skipped: 0, pct: 0 },
-            branches: { total: 0, covered: 0, skipped: 0, pct: 0 }
-        };
-    }
-    const totals = {
-        lines: { total: 0, covered: 0, skipped: 0 },
-        statements: { total: 0, covered: 0, skipped: 0 },
-        functions: { total: 0, covered: 0, skipped: 0 },
-        branches: { total: 0, covered: 0, skipped: 0 }
-    };
-    // Sum up all the coverage metrics
-    for (const coverage of projectCoverages) {
-        totals.lines.total += coverage.coverageData.lines.total;
-        totals.lines.covered += coverage.coverageData.lines.covered;
-        totals.lines.skipped += coverage.coverageData.lines.skipped;
-        totals.statements.total += coverage.coverageData.statements.total;
-        totals.statements.covered += coverage.coverageData.statements.covered;
-        totals.statements.skipped += coverage.coverageData.statements.skipped;
-        totals.functions.total += coverage.coverageData.functions.total;
-        totals.functions.covered += coverage.coverageData.functions.covered;
-        totals.functions.skipped += coverage.coverageData.functions.skipped;
-        totals.branches.total += coverage.coverageData.branches.total;
-        totals.branches.covered += coverage.coverageData.branches.covered;
-        totals.branches.skipped += coverage.coverageData.branches.skipped;
-    }
-    // Calculate percentages
-    const calculatePercentage = (covered, total) => {
-        if (total === 0)
-            return 100;
-        return Math.round((covered / total) * 10000) / 100;
-    };
-    return {
-        lines: {
-            ...totals.lines,
-            pct: calculatePercentage(totals.lines.covered, totals.lines.total)
-        },
-        statements: {
-            ...totals.statements,
-            pct: calculatePercentage(totals.statements.covered, totals.statements.total)
-        },
-        functions: {
-            ...totals.functions,
-            pct: calculatePercentage(totals.functions.covered, totals.functions.total)
-        },
-        branches: {
-            ...totals.branches,
-            pct: calculatePercentage(totals.branches.covered, totals.branches.total)
-        }
-    };
-}
-
-/**
  * Generates a badge color based on coverage percentage
  * @param percentage The coverage percentage
  * @returns A color string (red, yellow, or green)
@@ -31551,6 +31327,230 @@ ${generateCoverageSummaryRow(averageCoverage)}
 }
 
 /**
+ * Gets the list of affected projects that use Jest for testing
+ * @param affectedProjectsCommand The command to run to get affected projects
+ * @param packageManager The package manager to use (npm, yarn, or pnpm)
+ * @returns A list of affected projects with Jest as test executor
+ */
+async function getAffectedProjects(affectedProjectsCommand, packageManager = 'npm') {
+    coreExports.debug(`Using command: ${affectedProjectsCommand}`);
+    // Create a buffer to store the command output
+    let outputBuffer = '';
+    // Execute the command and capture the output
+    const options = {
+        silent: true, // Always silent in tests
+        listeners: {
+            stdout: (data) => {
+                outputBuffer += data.toString();
+                // Debug output
+                coreExports.debug(data.toString());
+            },
+            stderr: (data) => {
+                // Debug stderr output
+                coreExports.debug(`stderr: ${data.toString()}`);
+            }
+        }
+    };
+    try {
+        // Check if the command starts with nx
+        const commandParts = affectedProjectsCommand.split(' ');
+        const isNxCommand = commandParts[0] === 'nx';
+        coreExports.debug(`Using package manager: ${packageManager}`);
+        if (isNxCommand) {
+            // Always use npx regardless of package manager
+            coreExports.debug(`Executing: npx ${commandParts.join(' ')}`);
+            await execExports.exec('npx', commandParts, options);
+        }
+        else {
+            coreExports.debug(`Executing: ${commandParts.join(' ')}`);
+            await execExports.exec(commandParts[0], commandParts.slice(1), options);
+        }
+    }
+    catch (error) {
+        coreExports.warning(`Error executing affected projects command: ${error instanceof Error ? error.message : String(error)}`);
+        return [];
+    }
+    try {
+        // Parse the JSON output
+        const affectedOutput = JSON.parse(outputBuffer);
+        // Filter projects that use Jest as test executor
+        const jestProjects = Object.values(affectedOutput.graph.nodes)
+            .filter((node) => node.data.targets?.test?.executor === '@nx/jest:jest' ||
+            node.data.targets?.test?.executor === '@nrwl/jest:jest')
+            .map((node) => ({
+            name: node.name,
+            root: node.data.root
+        }));
+        coreExports.debug(`Found ${jestProjects.length} affected projects using Jest`);
+        return jestProjects;
+    }
+    catch (error) {
+        coreExports.error(`Error parsing affected projects output: ${error instanceof Error ? error.message : String(error)}`);
+        coreExports.debug(`Output buffer: ${outputBuffer}`);
+        return [];
+    }
+}
+
+/**
+ * Gets the coverage data for a project
+ * @param projectName The name of the project
+ * @param projectRoot The root path of the project
+ * @param coverageDirectory The coverage directory path (absolute path)
+ * @returns The coverage data for the project or null if not found
+ */
+async function getProjectCoverage(projectName, projectRoot, coverageDirectory) {
+    const coverageSummaryPath = path.join(coverageDirectory, 'coverage-summary.json');
+    try {
+        const coverageSummaryContent = await fs.readFile(coverageSummaryPath, 'utf-8');
+        const coverageSummary = JSON.parse(coverageSummaryContent);
+        if (!coverageSummary.total) {
+            coreExports.warning(`No total coverage data found in ${coverageSummaryPath}`);
+            return null;
+        }
+        return {
+            projectName,
+            projectRoot,
+            coverageData: coverageSummary.total
+        };
+    }
+    catch (error) {
+        coreExports.warning(`Error reading coverage summary for ${projectName}: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+    }
+}
+/**
+ * Calculates the average coverage across all projects
+ * @param projectCoverages The coverage data for all projects
+ * @returns The average coverage data
+ */
+function calculateAverageCoverage(projectCoverages) {
+    if (projectCoverages.length === 0) {
+        return {
+            lines: { total: 0, covered: 0, skipped: 0, pct: 0 },
+            statements: { total: 0, covered: 0, skipped: 0, pct: 0 },
+            functions: { total: 0, covered: 0, skipped: 0, pct: 0 },
+            branches: { total: 0, covered: 0, skipped: 0, pct: 0 }
+        };
+    }
+    const totals = {
+        lines: { total: 0, covered: 0, skipped: 0 },
+        statements: { total: 0, covered: 0, skipped: 0 },
+        functions: { total: 0, covered: 0, skipped: 0 },
+        branches: { total: 0, covered: 0, skipped: 0 }
+    };
+    // Sum up all the coverage metrics
+    for (const coverage of projectCoverages) {
+        totals.lines.total += coverage.coverageData.lines.total;
+        totals.lines.covered += coverage.coverageData.lines.covered;
+        totals.lines.skipped += coverage.coverageData.lines.skipped;
+        totals.statements.total += coverage.coverageData.statements.total;
+        totals.statements.covered += coverage.coverageData.statements.covered;
+        totals.statements.skipped += coverage.coverageData.statements.skipped;
+        totals.functions.total += coverage.coverageData.functions.total;
+        totals.functions.covered += coverage.coverageData.functions.covered;
+        totals.functions.skipped += coverage.coverageData.functions.skipped;
+        totals.branches.total += coverage.coverageData.branches.total;
+        totals.branches.covered += coverage.coverageData.branches.covered;
+        totals.branches.skipped += coverage.coverageData.branches.skipped;
+    }
+    // Calculate percentages
+    const calculatePercentage = (covered, total) => {
+        if (total === 0)
+            return 100;
+        return Math.round((covered / total) * 10000) / 100;
+    };
+    return {
+        lines: {
+            ...totals.lines,
+            pct: calculatePercentage(totals.lines.covered, totals.lines.total)
+        },
+        statements: {
+            ...totals.statements,
+            pct: calculatePercentage(totals.statements.covered, totals.statements.total)
+        },
+        functions: {
+            ...totals.functions,
+            pct: calculatePercentage(totals.functions.covered, totals.functions.total)
+        },
+        branches: {
+            ...totals.branches,
+            pct: calculatePercentage(totals.branches.covered, totals.branches.total)
+        }
+    };
+}
+
+/**
+ * Gets the Jest configuration for a project
+ * @param projectRoot The root path of the project
+ * @returns The Jest configuration or null if not found
+ */
+async function getJestConfig(projectRoot) {
+    coreExports.debug(`Getting Jest config for project at: ${projectRoot}`);
+    // Create a buffer to store the command output
+    let outputBuffer = '';
+    // Execute the command and capture the output
+    const options = {
+        cwd: projectRoot,
+        silent: true, // Always silent in tests
+        listeners: {
+            stdout: (data) => {
+                outputBuffer += data.toString();
+                // Debug output if debug is enabled
+                coreExports.debug(data.toString());
+            },
+            stderr: (data) => {
+                // Debug stderr output
+                coreExports.debug(`stderr: ${data.toString()}`);
+            }
+        }
+    };
+    try {
+        // Always use npx regardless of package manager
+        coreExports.debug(`Executing: npx jest --showConfig in ${projectRoot}`);
+        await execExports.exec('npx', ['jest', '--showConfig'], options);
+    }
+    catch (error) {
+        coreExports.warning(`Error getting Jest config: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+    }
+    try {
+        // Parse the JSON output
+        const jestConfig = JSON.parse(outputBuffer);
+        // Check if the config has the required properties
+        if (!jestConfig.globalConfig.coverageDirectory) {
+            coreExports.warning(`No coverage directory found in Jest config for ${projectRoot}`);
+            return null;
+        }
+        if (!jestConfig.globalConfig.coverageReporters?.includes('json-summary')) {
+            coreExports.warning(`json-summary reporter not found in Jest config for ${projectRoot}`);
+            return null;
+        }
+        return jestConfig;
+    }
+    catch (error) {
+        coreExports.error(`Error parsing Jest config: ${error instanceof Error ? error.message : String(error)}`);
+        coreExports.debug(`Output buffer: ${outputBuffer}`);
+        return null;
+    }
+}
+/**
+ * Checks if a coverage summary file exists for a project
+ * @param coverageDirectory The coverage directory path
+ * @returns True if the coverage summary file exists, false otherwise
+ */
+async function hasCoverageSummary(coverageDirectory) {
+    const coverageSummaryPath = path.join(coverageDirectory, 'coverage-summary.json');
+    try {
+        fs$1.accessSync(coverageSummaryPath);
+        return true;
+    }
+    catch {
+        coreExports.warning(`Coverage summary file not found at ${coverageSummaryPath}`);
+        return false;
+    }
+}
+
+/**
  * Creates or updates a PR comment with the coverage report
  * @param reportContent The content of the report
  * @param reportAnchor The anchor key for the report
@@ -31579,7 +31579,7 @@ async function upsertPRComment({ reportContent, reportAnchor, githubToken }) {
         });
         console.log('Total PR comments:', comments.length);
         // Find an existing comment with our anchor
-        const existingComment = comments.find((comment) => comment.body && comment.body.includes(reportAnchor));
+        const existingComment = comments.find((comment) => comment.body?.includes(reportAnchor));
         console.log('Existing comment:', existingComment);
         if (existingComment) {
             // Update the existing comment

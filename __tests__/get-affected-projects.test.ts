@@ -1,4 +1,4 @@
-import { jest, describe, beforeEach, it, expect } from '@jest/globals'
+import { beforeEach, describe, expect, it, jest } from '@jest/globals'
 import * as core from '../__fixtures__/core'
 import { mockNxGraphOutput } from '../__fixtures__/nx-graph'
 

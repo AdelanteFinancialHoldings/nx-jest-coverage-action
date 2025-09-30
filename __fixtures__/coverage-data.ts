@@ -1,7 +1,10 @@
-import { CoverageSummary, ProjectCoverage } from '../src/lib/get-coverage-data'
 import { jest } from '@jest/globals'
 import type * as fs from 'fs'
 import type * as path from 'path'
+import type {
+  CoverageSummary,
+  ProjectCoverage
+} from '../src/lib/get-coverage-data'
 
 // Mock functions
 export const readFileSync = jest.fn<typeof fs.readFileSync>()

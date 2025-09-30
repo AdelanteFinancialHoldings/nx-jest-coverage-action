@@ -1,14 +1,13 @@
-import { jest, describe, beforeEach, it, expect } from '@jest/globals'
-import type * as execTypes from '@actions/exec'
 import type * as pathTypes from 'node:path'
-import {
-  mockJestConfig,
-  mockJestConfigNoJsonSummary,
-  mockJestConfigNoCoverageDir
-} from '../__fixtures__/jest-config'
-
+import type * as execTypes from '@actions/exec'
+import { beforeEach, describe, expect, it, jest } from '@jest/globals'
 // Import mocks from fixtures
 import * as core from '../__fixtures__/core'
+import {
+  mockJestConfig,
+  mockJestConfigNoCoverageDir,
+  mockJestConfigNoJsonSummary
+} from '../__fixtures__/jest-config'
 
 // Create mocks for modules
 const exec = {
@@ -104,7 +103,7 @@ describe('get-jest-config', () => {
 
     it('should return null when coverage directory is missing', async () => {
       // Mock exec to simulate output without coverage directory
-      exec.exec.mockImplementation((cmd, args, options) => {
+      exec.exec.mockImplementation((_cmd, _args, options) => {
         if (options?.listeners?.stdout) {
           options.listeners.stdout(
             Buffer.from(JSON.stringify(mockJestConfigNoCoverageDir))
@@ -154,7 +153,7 @@ describe('get-jest-config', () => {
 
     it('should use npx when package manager is yarn', async () => {
       // Mock exec to simulate successful command execution
-      exec.exec.mockImplementation((cmd, args, options) => {
+      exec.exec.mockImplementation((_cmd, _args, options) => {
         if (options?.listeners?.stdout) {
           options.listeners.stdout(Buffer.from(JSON.stringify(mockJestConfig)))
         }

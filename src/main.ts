@@ -1,14 +1,13 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as github from '@actions/github'
-
-import { getAffectedProjects } from './lib/get-affected-projects.js'
-import { getJestConfig, hasCoverageSummary } from './lib/get-jest-config.js'
-import {
-  getProjectCoverage,
-  calculateAverageCoverage
-} from './lib/get-coverage-data.js'
 import { generateCoverageReport } from './lib/generate-report.js'
+import { getAffectedProjects } from './lib/get-affected-projects.js'
+import {
+  calculateAverageCoverage,
+  getProjectCoverage
+} from './lib/get-coverage-data.js'
+import { getJestConfig, hasCoverageSummary } from './lib/get-jest-config.js'
 import { upsertPRComment } from './lib/pr-comment.js'
 
 /**

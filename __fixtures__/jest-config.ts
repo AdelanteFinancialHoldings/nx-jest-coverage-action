@@ -1,5 +1,5 @@
-import type * as jestTypes from 'jest'
 import { jest } from '@jest/globals'
+import type * as jestTypes from 'jest'
 
 // Mock Jest configuration objects
 export const mockJestConfig = {
