@@ -20,20 +20,19 @@ coverage changes across your monorepo projects.
 - 🔄 Updates existing PR comments to avoid cluttering your PRs
 - 🎨 Color-coded badges based on coverage thresholds (red < 70%, yellow < 80%,
   green ≥ 80%)
-- 📦 Supports npm, yarn, and pnpm package managers
 
 ## How It Works
 
 1. **Detects Affected Projects**: Uses NX to identify projects affected by PR
    changes
-2. **Filters Jest Projects**: Only processes projects configured with Jest as
+1. **Filters Jest Projects**: Only processes projects configured with Jest as
    their test executor
-3. **Runs Tests** (optional): Can run tests before generating the report if
+1. **Runs Tests** (optional): Can run tests before generating the report if
    `run-tests: true`
-4. **Collects Coverage Data**: Reads Jest coverage summaries from each project
-5. **Generates Report**: Creates a formatted markdown report with badges and
+1. **Collects Coverage Data**: Reads Jest coverage summaries from each project
+1. **Generates Report**: Creates a formatted Markdown report with badges and
    tables
-6. **Posts to PR**: Updates or creates a PR comment with the coverage report
+1. **Posts to PR**: Updates or creates a PR comment with the coverage report
 
 ## Prerequisites
 
