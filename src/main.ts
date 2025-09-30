@@ -57,7 +57,6 @@ export async function run(): Promise<void> {
       }
     }
 
-    // Get affected projects
     const affectedProjects = await getAffectedProjects(affectedProjectsCommand)
 
     if (affectedProjects.length === 0) {

@@ -90,7 +90,6 @@ export function calculateAverageCoverage(
     branches: { total: 0, covered: 0, skipped: 0 }
   }
 
-  // Sum up all the coverage metrics
   for (const coverage of projectCoverages) {
     totals.lines.total += coverage.coverageData.lines.total
     totals.lines.covered += coverage.coverageData.lines.covered
@@ -109,7 +108,6 @@ export function calculateAverageCoverage(
     totals.branches.skipped += coverage.coverageData.branches.skipped
   }
 
-  // Calculate percentages
   const calculatePercentage = (covered: number, total: number): number => {
     if (total === 0) return 100
     return Math.round((covered / total) * 10000) / 100

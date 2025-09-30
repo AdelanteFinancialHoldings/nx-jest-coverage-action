@@ -31293,12 +31293,10 @@ ${generateCoverageSummaryRow(projectCoverage.coverageData)}
  */
 function generateCoverageReport(projectCoverages, averageCoverage, reportAnchor) {
     const timestamp = new Date().toISOString();
-    // Generate overall badges
     const statementsBadge = generateCoverageBadge('statements', averageCoverage.statements.pct);
     const branchesBadge = generateCoverageBadge('branches', averageCoverage.branches.pct);
     const functionsBadge = generateCoverageBadge('functions', averageCoverage.functions.pct);
     const linesBadge = generateCoverageBadge('lines', averageCoverage.lines.pct);
-    // Generate the report header
     let report = `${reportAnchor}
 # Jest Coverage Report 🧪📊
 
@@ -31312,7 +31310,6 @@ ${generateCoverageSummaryRow(averageCoverage)}
 
 ## Project Coverage Details
 `;
-    // Add project details
     if (projectCoverages.length === 0) {
         report += '\nNo projects with coverage data found.\n';
     }
@@ -31321,7 +31318,6 @@ ${generateCoverageSummaryRow(averageCoverage)}
             report += generateProjectCoverageDetails(projectCoverage);
         }
     }
-    // Add timestamp
     report += `\n\n<sub>Last updated: ${timestamp}</sub>`;
     return report;
 }
@@ -31334,30 +31330,24 @@ ${generateCoverageSummaryRow(averageCoverage)}
  */
 async function getAffectedProjects(affectedProjectsCommand, packageManager = 'npm') {
     coreExports.debug(`Using command: ${affectedProjectsCommand}`);
-    // Create a buffer to store the command output
     let outputBuffer = '';
-    // Execute the command and capture the output
     const options = {
         silent: true, // Always silent in tests
         listeners: {
             stdout: (data) => {
                 outputBuffer += data.toString();
-                // Debug output
                 coreExports.debug(data.toString());
             },
             stderr: (data) => {
-                // Debug stderr output
                 coreExports.debug(`stderr: ${data.toString()}`);
             }
         }
     };
     try {
-        // Check if the command starts with nx
         const commandParts = affectedProjectsCommand.split(' ');
         const isNxCommand = commandParts[0] === 'nx';
         coreExports.debug(`Using package manager: ${packageManager}`);
         if (isNxCommand) {
-            // Always use npx regardless of package manager
             coreExports.debug(`Executing: npx ${commandParts.join(' ')}`);
             await execExports.exec('npx', commandParts, options);
         }
@@ -31371,9 +31361,7 @@ async function getAffectedProjects(affectedProjectsCommand, packageManager = 'np
         return [];
     }
     try {
-        // Parse the JSON output
         const affectedOutput = JSON.parse(outputBuffer);
-        // Filter projects that use Jest as test executor
         const jestProjects = Object.values(affectedOutput.graph.nodes)
             .filter((node) => node.data.targets?.test?.executor === '@nx/jest:jest' ||
             node.data.targets?.test?.executor === '@nrwl/jest:jest')
@@ -31438,7 +31426,6 @@ function calculateAverageCoverage(projectCoverages) {
         functions: { total: 0, covered: 0, skipped: 0 },
         branches: { total: 0, covered: 0, skipped: 0 }
     };
-    // Sum up all the coverage metrics
     for (const coverage of projectCoverages) {
         totals.lines.total += coverage.coverageData.lines.total;
         totals.lines.covered += coverage.coverageData.lines.covered;
@@ -31453,7 +31440,6 @@ function calculateAverageCoverage(projectCoverages) {
         totals.branches.covered += coverage.coverageData.branches.covered;
         totals.branches.skipped += coverage.coverageData.branches.skipped;
     }
-    // Calculate percentages
     const calculatePercentage = (covered, total) => {
         if (total === 0)
             return 100;
@@ -31557,8 +31543,6 @@ async function hasCoverageSummary(coverageDirectory) {
  * @returns True if the comment was created or updated, false otherwise
  */
 async function upsertPRComment({ reportContent, reportAnchor, githubToken }) {
-    // Check if we're in a PR context
-    console.log('Github context', githubExports.context);
     if (!githubExports.context.payload.pull_request) {
         coreExports.info('Not in a PR context, skipping comment creation');
         return false;
@@ -31571,18 +31555,13 @@ async function upsertPRComment({ reportContent, reportAnchor, githubToken }) {
     const { owner, repo } = githubExports.context.repo;
     const pull_request_number = githubExports.context.payload.pull_request.number;
     try {
-        // Get all comments in the PR
         const { data: comments } = await octokit.rest.issues.listComments({
             owner,
             repo,
             issue_number: pull_request_number
         });
-        console.log('Total PR comments:', comments.length);
-        // Find an existing comment with our anchor
         const existingComment = comments.find((comment) => comment.body?.includes(reportAnchor));
-        console.log('Existing comment:', existingComment);
         if (existingComment) {
-            // Update the existing comment
             coreExports.info(`Updating existing comment with ID ${existingComment.id}`);
             await octokit.rest.issues.updateComment({
                 owner,
@@ -31592,7 +31571,6 @@ async function upsertPRComment({ reportContent, reportAnchor, githubToken }) {
             });
         }
         else {
-            // Create a new comment
             coreExports.info('Creating new comment');
             await octokit.rest.issues.createComment({
                 owner,
@@ -31649,7 +31627,6 @@ async function run() {
                 coreExports.warning('Continuing with coverage report generation');
             }
         }
-        // Get affected projects
         const affectedProjects = await getAffectedProjects(affectedProjectsCommand);
         if (affectedProjects.length === 0) {
             coreExports.info('No affected projects found');

@@ -64,7 +64,6 @@ export function generateCoverageReport(
 ): string {
   const timestamp = new Date().toISOString()
 
-  // Generate overall badges
   const statementsBadge = generateCoverageBadge(
     'statements',
     averageCoverage.statements.pct
@@ -79,7 +78,6 @@ export function generateCoverageReport(
   )
   const linesBadge = generateCoverageBadge('lines', averageCoverage.lines.pct)
 
-  // Generate the report header
   let report = `${reportAnchor}
 # Jest Coverage Report 🧪📊
 
@@ -94,7 +92,6 @@ ${generateCoverageSummaryRow(averageCoverage)}
 ## Project Coverage Details
 `
 
-  // Add project details
   if (projectCoverages.length === 0) {
     report += '\nNo projects with coverage data found.\n'
   } else {
@@ -103,7 +100,6 @@ ${generateCoverageSummaryRow(averageCoverage)}
     }
   }
 
-  // Add timestamp
   report += `\n\n<sub>Last updated: ${timestamp}</sub>`
 
   return report
