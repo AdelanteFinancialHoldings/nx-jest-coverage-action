@@ -34,34 +34,28 @@ export async function getAffectedProjects(
 ): Promise<Array<{ name: string; root: string }>> {
   core.debug(`Using command: ${affectedProjectsCommand}`)
 
-  // Create a buffer to store the command output
   let outputBuffer = ''
 
-  // Execute the command and capture the output
   const options = {
     silent: true, // Always silent in tests
     listeners: {
       stdout: (data: Buffer) => {
         outputBuffer += data.toString()
-        // Debug output
         core.debug(data.toString())
       },
       stderr: (data: Buffer) => {
-        // Debug stderr output
         core.debug(`stderr: ${data.toString()}`)
       }
     }
   }
 
   try {
-    // Check if the command starts with nx
     const commandParts = affectedProjectsCommand.split(' ')
     const isNxCommand = commandParts[0] === 'nx'
 
     core.debug(`Using package manager: ${packageManager}`)
 
     if (isNxCommand) {
-      // Always use npx regardless of package manager
       core.debug(`Executing: npx ${commandParts.join(' ')}`)
       await exec('npx', commandParts, options)
     } else {
@@ -76,10 +70,8 @@ export async function getAffectedProjects(
   }
 
   try {
-    // Parse the JSON output
     const affectedOutput = JSON.parse(outputBuffer) as NxAffectedOutput
 
-    // Filter projects that use Jest as test executor
     const jestProjects = Object.values(affectedOutput.graph.nodes)
       .filter(
         (node) =>

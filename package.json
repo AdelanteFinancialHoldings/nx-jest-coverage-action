@@ -1,7 +1,7 @@
 {
   "name": "nx-jest-coverage-action",
   "description": "Create a Jest test coverage report for affected projects in NX workspaces and posts it as a PR comment",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "author": "Sebastian Duque",
   "type": "module",
   "private": true,
