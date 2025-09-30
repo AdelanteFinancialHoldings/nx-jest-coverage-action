@@ -1,20 +1,24 @@
 {
-  "name": "typescript-action",
-  "description": "GitHub Actions TypeScript template",
-  "version": "0.0.0",
-  "author": "",
+  "name": "nx-jest-coverage-action",
+  "description": "Create a Jest test coverage report for affected projects in NX workspaces and posts it as a PR comment",
+  "version": "1.0.0",
+  "author": "Sebastian Duque",
   "type": "module",
   "private": true,
-  "homepage": "https://github.com/actions/typescript-action",
+  "homepage": "https://github.com/AdelanteFinancialHoldings/nx-jest-coverage-action",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/typescript-action.git"
+    "url": "git+https://github.com/AdelanteFinancialHoldings/nx-jest-coverage-action.git"
   },
   "bugs": {
-    "url": "https://github.com/actions/typescript-action/issues"
+    "url": "https://github.com/AdelanteFinancialHoldings/nx-jest-coverage-action/issues"
   },
   "keywords": [
-    "actions"
+    "actions",
+    "nx",
+    "jest",
+    "coverage",
+    "pr-comment"
   ],
   "exports": {
     ".": "./dist/index.js"
@@ -67,5 +71,8 @@
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "*"
+  },
+  "volta": {
+    "node": "24.6.0"
   }
 }

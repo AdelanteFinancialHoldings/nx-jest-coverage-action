@@ -1,23 +1,40 @@
-name: The name of your action here
-description: Provide a description here
-author: Your name or organization here
+name: 'NX Jest Coverage Action'
+description:
+  'Creates a Jest test coverage report for affected projects in NX workspaces
+  and posts it as a PR comment'
+author: 'sebastiandg7'
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
-  icon: heart
-  color: red
+  icon: 'bar-chart-2'
+  color: 'blue'
 
 # Define your inputs here.
 inputs:
-  milliseconds:
-    description: Your input description here
-    required: true
-    default: '1000'
+  workspace-location:
+    description:
+      'The location of the NX workspace relative to the repository root'
+    required: false
+    default: '.'
+  github-token:
+    description:
+      'Github token of the repository (automatically created by Github)'
+    required: false
+    default: ${{ github.token }}
+  run-tests:
+    description: 'Whether to run the test target before building the report'
+    required: false
+    default: 'false'
+  report-anchor:
+    description: 'Anchor key used to upsert the PR comment with the report'
+    required: false
+    default: '<!-- nx-jest-coverage-action report -->'
 
 # Define your outputs here.
 outputs:
-  time:
-    description: Your output description here
+  coverage-summary:
+    description:
+      'JSON string containing the coverage summary for all affected projects'
 
 runs:
   using: node24
