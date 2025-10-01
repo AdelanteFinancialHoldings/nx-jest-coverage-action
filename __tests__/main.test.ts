@@ -96,8 +96,6 @@ describe('main.ts', () => {
       switch (name) {
         case 'workspace-location':
           return '.'
-        case 'affected-projects-command':
-          return 'nx affected -t=test --graph=stdout'
         case 'run-tests':
           return 'false'
         case 'github-token':
@@ -148,9 +146,7 @@ describe('main.ts', () => {
     await run()
 
     // Verify getAffectedProjects was called with correct arguments
-    expect(getAffectedProjects.getAffectedProjects).toHaveBeenCalledWith(
-      'nx affected -t=test --graph=stdout'
-    )
+    expect(getAffectedProjects.getAffectedProjects).toHaveBeenCalled()
 
     // Verify getJestConfig was called for each project
     expect(getJestConfig.getJestConfig).toHaveBeenCalledTimes(
@@ -237,8 +233,6 @@ describe('main.ts', () => {
     jest.mocked(core.getInput).mockImplementation((name) => {
       if (name === 'run-tests') return 'true'
       if (name === 'workspace-location') return '.'
-      if (name === 'affected-projects-command')
-        return 'nx affected -t=test --graph=stdout'
       if (name === 'report-anchor')
         return '<!-- nx-jest-coverage-action report -->'
       return ''
@@ -264,8 +258,6 @@ describe('main.ts', () => {
     jest.mocked(core.getInput).mockImplementation((name) => {
       if (name === 'run-tests') return 'true'
       if (name === 'workspace-location') return '.'
-      if (name === 'affected-projects-command')
-        return 'nx affected -t=test --graph=stdout'
       if (name === 'report-anchor')
         return '<!-- nx-jest-coverage-action report -->'
       return ''

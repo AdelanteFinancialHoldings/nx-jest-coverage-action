@@ -24,14 +24,12 @@ interface NxAffectedOutput {
 
 /**
  * Gets the list of affected projects that use Jest for testing
- * @param affectedProjectsCommand The command to run to get affected projects
- * @param packageManager The package manager to use (npm, yarn, or pnpm)
  * @returns A list of affected projects with Jest as test executor
  */
-export async function getAffectedProjects(
-  affectedProjectsCommand: string,
-  packageManager: string = 'npm'
-): Promise<Array<{ name: string; root: string }>> {
+export async function getAffectedProjects(): Promise<
+  Array<{ name: string; root: string }>
+> {
+  const affectedProjectsCommand = 'nx affected -t=test --graph=stdout'
   core.debug(`Using command: ${affectedProjectsCommand}`)
 
   let outputBuffer = ''
@@ -52,8 +50,6 @@ export async function getAffectedProjects(
   try {
     const commandParts = affectedProjectsCommand.split(' ')
     const isNxCommand = commandParts[0] === 'nx'
-
-    core.debug(`Using package manager: ${packageManager}`)
 
     if (isNxCommand) {
       core.debug(`Executing: npx ${commandParts.join(' ')}`)

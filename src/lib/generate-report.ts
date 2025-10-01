@@ -83,7 +83,7 @@ export function generateCoverageReport(
 
 ${statementsBadge} ${branchesBadge} ${functionsBadge} ${linesBadge}
 
-## Coverage Summary
+## Coverage Summary (affected projects)
 
 | Statements | Branches | Functions | Lines |
 | --- | --- | --- | --- |

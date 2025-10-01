@@ -31302,7 +31302,7 @@ function generateCoverageReport(projectCoverages, averageCoverage, reportAnchor)
 
 ${statementsBadge} ${branchesBadge} ${functionsBadge} ${linesBadge}
 
-## Coverage Summary
+## Coverage Summary (affected projects)
 
 | Statements | Branches | Functions | Lines |
 | --- | --- | --- | --- |
@@ -31324,11 +31324,10 @@ ${generateCoverageSummaryRow(averageCoverage)}
 
 /**
  * Gets the list of affected projects that use Jest for testing
- * @param affectedProjectsCommand The command to run to get affected projects
- * @param packageManager The package manager to use (npm, yarn, or pnpm)
  * @returns A list of affected projects with Jest as test executor
  */
-async function getAffectedProjects(affectedProjectsCommand, packageManager = 'npm') {
+async function getAffectedProjects() {
+    const affectedProjectsCommand = 'nx affected -t=test --graph=stdout';
     coreExports.debug(`Using command: ${affectedProjectsCommand}`);
     let outputBuffer = '';
     const options = {
@@ -31346,7 +31345,6 @@ async function getAffectedProjects(affectedProjectsCommand, packageManager = 'np
     try {
         const commandParts = affectedProjectsCommand.split(' ');
         const isNxCommand = commandParts[0] === 'nx';
-        coreExports.debug(`Using package manager: ${packageManager}`);
         if (isNxCommand) {
             coreExports.debug(`Executing: npx ${commandParts.join(' ')}`);
             await execExports.exec('npx', commandParts, options);
@@ -31596,7 +31594,6 @@ async function run() {
     const originalWorkingDir = process.cwd();
     try {
         const workspaceLocation = coreExports.getInput('workspace-location');
-        const affectedProjectsCommand = coreExports.getInput('affected-projects-command');
         const runTests = coreExports.getInput('run-tests') === 'true';
         const reportAnchor = coreExports.getInput('report-anchor');
         const githubToken = coreExports.getInput('github-token');
@@ -31627,7 +31624,7 @@ async function run() {
                 coreExports.warning('Continuing with coverage report generation');
             }
         }
-        const affectedProjects = await getAffectedProjects(affectedProjectsCommand);
+        const affectedProjects = await getAffectedProjects();
         if (affectedProjects.length === 0) {
             coreExports.info('No affected projects found');
             return;
