@@ -1,41 +1,30 @@
 import * as core from '@actions/core'
 import { exec } from '@actions/exec'
 
-interface NxNode {
+interface NxProjectDetails {
+  root: string
   name: string
-  type: string
-  data: {
-    root: string
-    targets?: {
-      test?: {
-        executor?: string
-      }
+  targets?: {
+    test?: {
+      executor?: string
     }
   }
 }
 
-interface NxGraph {
-  nodes: Record<string, NxNode>
-}
-
-interface NxAffectedOutput {
-  graph: NxGraph
-}
-
 /**
- * Gets the list of affected projects that use Jest for testing
- * @returns A list of affected projects with Jest as test executor
+ * Executes a command and captures its output
+ * @param command The command to execute
+ * @param args The command arguments
+ * @returns The command output as a string
  */
-export async function getAffectedProjects(): Promise<
-  Array<{ name: string; root: string }>
-> {
-  const affectedProjectsCommand = 'nx affected -t=test --graph=stdout'
-  core.debug(`Using command: ${affectedProjectsCommand}`)
-
+async function executeCommand(
+  command: string,
+  args: string[]
+): Promise<string> {
   let outputBuffer = ''
 
   const options = {
-    silent: true, // Always silent in tests
+    silent: true,
     listeners: {
       stdout: (data: Buffer) => {
         outputBuffer += data.toString()
@@ -47,45 +36,81 @@ export async function getAffectedProjects(): Promise<
     }
   }
 
-  try {
-    const commandParts = affectedProjectsCommand.split(' ')
-    const isNxCommand = commandParts[0] === 'nx'
+  core.debug(`Executing: ${command} ${args.join(' ')}`)
+  await exec(command, args, options)
 
-    if (isNxCommand) {
-      core.debug(`Executing: npx ${commandParts.join(' ')}`)
-      await exec('npx', commandParts, options)
-    } else {
-      core.debug(`Executing: ${commandParts.join(' ')}`)
-      await exec(commandParts[0], commandParts.slice(1), options)
-    }
-  } catch (error) {
-    core.warning(
-      `Error executing affected projects command: ${error instanceof Error ? error.message : String(error)}`
+  return outputBuffer.trim()
+}
+
+/**
+ * Gets the list of affected projects that use Jest for testing
+ * @returns A list of affected projects with Jest as test executor
+ */
+export async function getAffectedProjects(): Promise<
+  Array<{ name: string; root: string }>
+> {
+  try {
+    const output = await executeCommand('npx', [
+      'nx',
+      'show',
+      'projects',
+      '--affected',
+      '--withTarget',
+      'test',
+      '--json'
+    ])
+
+    const affectedProjectNames = JSON.parse(output) as string[]
+    core.debug(
+      `Found ${affectedProjectNames.length} affected projects with test target`
     )
-    return []
-  }
 
-  try {
-    const affectedOutput = JSON.parse(outputBuffer) as NxAffectedOutput
+    const projectsWithDetails: Array<{ name: string; root: string }> = []
 
-    const jestProjects = Object.values(affectedOutput.graph.nodes)
-      .filter(
-        (node) =>
-          node.data.targets?.test?.executor === '@nx/jest:jest' ||
-          node.data.targets?.test?.executor === '@nrwl/jest:jest'
-      )
-      .map((node) => ({
-        name: node.name,
-        root: node.data.root
-      }))
+    for (const projectName of affectedProjectNames) {
+      try {
+        const projectDetailsOutput = await executeCommand('npx', [
+          'nx',
+          'show',
+          'project',
+          projectName,
+          '--json'
+        ])
 
-    core.debug(`Found ${jestProjects.length} affected projects using Jest`)
-    return jestProjects
+        const projectDetails = JSON.parse(
+          projectDetailsOutput
+        ) as NxProjectDetails
+
+        const isJestProject =
+          projectDetails.targets?.test?.executor === '@nx/jest:jest' ||
+          projectDetails.targets?.test?.executor === '@nrwl/jest:jest'
+
+        if (isJestProject) {
+          projectsWithDetails.push({
+            name: projectDetails.name,
+            root: projectDetails.root
+          })
+          core.debug(`Project ${projectName} uses Jest`)
+        } else {
+          core.debug(
+            `Project ${projectName} does not use Jest (executor: ${projectDetails.targets?.test?.executor})`
+          )
+        }
+      } catch (error) {
+        core.warning(
+          `Error getting details for project ${projectName}: ${error instanceof Error ? error.message : String(error)}`
+        )
+      }
+    }
+
+    core.debug(
+      `Found ${projectsWithDetails.length} affected projects using Jest`
+    )
+    return projectsWithDetails
   } catch (error) {
     core.error(
-      `Error parsing affected projects output: ${error instanceof Error ? error.message : String(error)}`
+      `Error getting affected projects: ${error instanceof Error ? error.message : String(error)}`
     )
-    core.debug(`Output buffer: ${outputBuffer}`)
     return []
   }
 }
