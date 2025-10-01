@@ -39,9 +39,7 @@ describe('getAffectedProjects', () => {
       return Promise.resolve(0)
     })
 
-    const result = await getAffectedProjects(
-      'nx affected -t=test --graph=stdout'
-    )
+    const result = await getAffectedProjects()
 
     expect(exec.exec).toHaveBeenCalledWith(
       'npx',
@@ -75,9 +73,7 @@ describe('getAffectedProjects', () => {
     // Mock exec to simulate command execution failure
     jest.spyOn(exec, 'exec').mockRejectedValue(new Error('Command failed'))
 
-    const result = await getAffectedProjects(
-      'nx affected -t=test --graph=stdout'
-    )
+    const result = await getAffectedProjects()
 
     // Verify warning was logged
     expect(core.warning).toHaveBeenCalledWith(
@@ -97,9 +93,7 @@ describe('getAffectedProjects', () => {
       return Promise.resolve(0)
     })
 
-    const result = await getAffectedProjects(
-      'nx affected -t=test --graph=stdout'
-    )
+    const result = await getAffectedProjects()
 
     // Verify error was logged
     expect(core.error).toHaveBeenCalledWith(
@@ -119,9 +113,7 @@ describe('getAffectedProjects', () => {
       return Promise.resolve(0)
     })
 
-    const result = await getAffectedProjects(
-      'nx affected -t=test --graph=stdout'
-    )
+    const result = await getAffectedProjects()
 
     // Should return empty array when graph data is missing
     expect(result).toEqual([])

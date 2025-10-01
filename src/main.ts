@@ -20,7 +20,6 @@ export async function run(): Promise<void> {
 
   try {
     const workspaceLocation = core.getInput('workspace-location')
-    const affectedProjectsCommand = core.getInput('affected-projects-command')
     const runTests = core.getInput('run-tests') === 'true'
     const reportAnchor = core.getInput('report-anchor')
     const githubToken: string = core.getInput('github-token')
@@ -57,7 +56,7 @@ export async function run(): Promise<void> {
       }
     }
 
-    const affectedProjects = await getAffectedProjects(affectedProjectsCommand)
+    const affectedProjects = await getAffectedProjects()
 
     if (affectedProjects.length === 0) {
       core.info('No affected projects found')
