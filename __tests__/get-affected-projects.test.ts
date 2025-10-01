@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals'
 import * as core from '../__fixtures__/core'
-import { mockNxGraphOutput } from '../__fixtures__/nx-graph'
+import { mockNxProjectDetails } from '../__fixtures__/nx-graph'
 
 // Mock exec module with proper types
 type ExecOptions = {
@@ -31,10 +31,27 @@ describe('getAffectedProjects', () => {
   })
 
   it('should return projects using Jest as test executor', async () => {
-    // Mock exec to simulate successful command execution
     jest.spyOn(exec, 'exec').mockImplementation((cmd, args, options) => {
       if (options?.listeners?.stdout) {
-        options.listeners.stdout(Buffer.from(JSON.stringify(mockNxGraphOutput)))
+        const argsArray = args as string[]
+        if (argsArray[1] === 'show' && argsArray[2] === 'projects') {
+          options.listeners.stdout(
+            Buffer.from(
+              JSON.stringify([
+                'project-a',
+                'project-b',
+                'project-c',
+                'project-d'
+              ])
+            )
+          )
+        } else if (argsArray[1] === 'show' && argsArray[2] === 'project') {
+          const projectName = argsArray[3]
+          const projectData = mockNxProjectDetails[projectName]
+          if (projectData) {
+            options.listeners.stdout(Buffer.from(JSON.stringify(projectData)))
+          }
+        }
       }
       return Promise.resolve(0)
     })
@@ -43,13 +60,20 @@ describe('getAffectedProjects', () => {
 
     expect(exec.exec).toHaveBeenCalledWith(
       'npx',
-      ['nx', 'affected', '-t=test', '--graph=stdout'],
+      [
+        'nx',
+        'show',
+        'projects',
+        '--affected',
+        '--withTarget',
+        'test',
+        '--json'
+      ],
       expect.objectContaining({
         silent: true
       })
     )
 
-    // Should return projects with @nx/jest:jest or @nrwl/jest:jest executors
     expect(result).toHaveLength(4)
     expect(result).toEqual(
       expect.arrayContaining([
@@ -59,33 +83,21 @@ describe('getAffectedProjects', () => {
         { name: 'project-d', root: 'libs/project-d' }
       ])
     )
-
-    // Should not include projects with other executors or no targets
-    expect(result).not.toEqual(
-      expect.arrayContaining([
-        { name: 'project-e', root: 'libs/project-e' },
-        { name: 'project-f', root: 'libs/project-f' }
-      ])
-    )
   })
 
   it('should handle command execution errors', async () => {
-    // Mock exec to simulate command execution failure
     jest.spyOn(exec, 'exec').mockRejectedValue(new Error('Command failed'))
 
     const result = await getAffectedProjects()
 
-    // Verify warning was logged
-    expect(core.warning).toHaveBeenCalledWith(
-      expect.stringContaining('Error executing affected projects command')
+    expect(core.error).toHaveBeenCalledWith(
+      expect.stringContaining('Error getting affected projects')
     )
 
-    // Should return empty array on command failure
     expect(result).toEqual([])
   })
 
   it('should handle invalid JSON output', async () => {
-    // Mock exec to simulate invalid JSON output
     jest.spyOn(exec, 'exec').mockImplementation((cmd, args, options) => {
       if (options?.listeners?.stdout) {
         options.listeners.stdout(Buffer.from('Invalid JSON'))
@@ -95,27 +107,73 @@ describe('getAffectedProjects', () => {
 
     const result = await getAffectedProjects()
 
-    // Verify error was logged
     expect(core.error).toHaveBeenCalledWith(
-      expect.stringContaining('Error parsing affected projects output')
+      expect.stringContaining('Error getting affected projects')
     )
 
-    // Should return empty array on parsing failure
     expect(result).toEqual([])
   })
 
-  it('should handle missing graph data', async () => {
-    // Mock exec to simulate output with missing graph data
+  it('should handle empty project list', async () => {
     jest.spyOn(exec, 'exec').mockImplementation((cmd, args, options) => {
       if (options?.listeners?.stdout) {
-        options.listeners.stdout(Buffer.from('{}'))
+        options.listeners.stdout(Buffer.from('[]'))
       }
       return Promise.resolve(0)
     })
 
     const result = await getAffectedProjects()
 
-    // Should return empty array when graph data is missing
+    expect(result).toEqual([])
+  })
+
+  it('should filter out non-Jest projects', async () => {
+    jest.spyOn(exec, 'exec').mockImplementation((cmd, args, options) => {
+      if (options?.listeners?.stdout) {
+        const argsArray = args as string[]
+        if (argsArray[1] === 'show' && argsArray[2] === 'projects') {
+          options.listeners.stdout(
+            Buffer.from(JSON.stringify(['project-a', 'project-e']))
+          )
+        } else if (argsArray[1] === 'show' && argsArray[2] === 'project') {
+          const projectName = argsArray[3]
+          const projectData = mockNxProjectDetails[projectName]
+          if (projectData) {
+            options.listeners.stdout(Buffer.from(JSON.stringify(projectData)))
+          }
+        }
+      }
+      return Promise.resolve(0)
+    })
+
+    const result = await getAffectedProjects()
+
+    expect(result).toHaveLength(1)
+    expect(result).toEqual([{ name: 'project-a', root: 'libs/project-a' }])
+  })
+
+  it('should handle errors getting individual project details', async () => {
+    let callCount = 0
+    jest.spyOn(exec, 'exec').mockImplementation((cmd, args, options) => {
+      if (callCount === 0) {
+        if (options?.listeners?.stdout) {
+          options.listeners.stdout(
+            Buffer.from(JSON.stringify(['project-a', 'project-b']))
+          )
+        }
+        callCount++
+        return Promise.resolve(0)
+      } else {
+        callCount++
+        return Promise.reject(new Error('Failed to get project details'))
+      }
+    })
+
+    const result = await getAffectedProjects()
+
+    expect(core.warning).toHaveBeenCalledWith(
+      expect.stringContaining('Error getting details for project')
+    )
     expect(result).toEqual([])
   })
 })

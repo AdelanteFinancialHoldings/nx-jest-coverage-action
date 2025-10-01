@@ -31323,15 +31323,15 @@ ${generateCoverageSummaryRow(averageCoverage)}
 }
 
 /**
- * Gets the list of affected projects that use Jest for testing
- * @returns A list of affected projects with Jest as test executor
+ * Executes a command and captures its output
+ * @param command The command to execute
+ * @param args The command arguments
+ * @returns The command output as a string
  */
-async function getAffectedProjects() {
-    const affectedProjectsCommand = 'nx affected -t=test --graph=stdout';
-    coreExports.debug(`Using command: ${affectedProjectsCommand}`);
+async function executeCommand(command, args) {
     let outputBuffer = '';
     const options = {
-        silent: true, // Always silent in tests
+        silent: true,
         listeners: {
             stdout: (data) => {
                 outputBuffer += data.toString();
@@ -31342,37 +31342,60 @@ async function getAffectedProjects() {
             }
         }
     };
+    coreExports.debug(`Executing: ${command} ${args.join(' ')}`);
+    await execExports.exec(command, args, options);
+    return outputBuffer.trim();
+}
+/**
+ * Gets the list of affected projects that use Jest for testing
+ * @returns A list of affected projects with Jest as test executor
+ */
+async function getAffectedProjects() {
     try {
-        const commandParts = affectedProjectsCommand.split(' ');
-        const isNxCommand = commandParts[0] === 'nx';
-        if (isNxCommand) {
-            coreExports.debug(`Executing: npx ${commandParts.join(' ')}`);
-            await execExports.exec('npx', commandParts, options);
+        const output = await executeCommand('npx', [
+            'nx',
+            'show',
+            'projects',
+            '--affected',
+            '--withTarget',
+            'test',
+            '--json'
+        ]);
+        const affectedProjectNames = JSON.parse(output);
+        coreExports.debug(`Found ${affectedProjectNames.length} affected projects with test target`);
+        const projectsWithDetails = [];
+        for (const projectName of affectedProjectNames) {
+            try {
+                const projectDetailsOutput = await executeCommand('npx', [
+                    'nx',
+                    'show',
+                    'project',
+                    projectName,
+                    '--json'
+                ]);
+                const projectDetails = JSON.parse(projectDetailsOutput);
+                const isJestProject = projectDetails.targets?.test?.executor === '@nx/jest:jest' ||
+                    projectDetails.targets?.test?.executor === '@nrwl/jest:jest';
+                if (isJestProject) {
+                    projectsWithDetails.push({
+                        name: projectDetails.name,
+                        root: projectDetails.root
+                    });
+                    coreExports.debug(`Project ${projectName} uses Jest`);
+                }
+                else {
+                    coreExports.debug(`Project ${projectName} does not use Jest (executor: ${projectDetails.targets?.test?.executor})`);
+                }
+            }
+            catch (error) {
+                coreExports.warning(`Error getting details for project ${projectName}: ${error instanceof Error ? error.message : String(error)}`);
+            }
         }
-        else {
-            coreExports.debug(`Executing: ${commandParts.join(' ')}`);
-            await execExports.exec(commandParts[0], commandParts.slice(1), options);
-        }
+        coreExports.debug(`Found ${projectsWithDetails.length} affected projects using Jest`);
+        return projectsWithDetails;
     }
     catch (error) {
-        coreExports.warning(`Error executing affected projects command: ${error instanceof Error ? error.message : String(error)}`);
-        return [];
-    }
-    try {
-        const affectedOutput = JSON.parse(outputBuffer);
-        const jestProjects = Object.values(affectedOutput.graph.nodes)
-            .filter((node) => node.data.targets?.test?.executor === '@nx/jest:jest' ||
-            node.data.targets?.test?.executor === '@nrwl/jest:jest')
-            .map((node) => ({
-            name: node.name,
-            root: node.data.root
-        }));
-        coreExports.debug(`Found ${jestProjects.length} affected projects using Jest`);
-        return jestProjects;
-    }
-    catch (error) {
-        coreExports.error(`Error parsing affected projects output: ${error instanceof Error ? error.message : String(error)}`);
-        coreExports.debug(`Output buffer: ${outputBuffer}`);
+        coreExports.error(`Error getting affected projects: ${error instanceof Error ? error.message : String(error)}`);
         return [];
     }
 }
