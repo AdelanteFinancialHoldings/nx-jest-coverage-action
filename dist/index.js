@@ -31308,16 +31308,19 @@ ${statementsBadge} ${branchesBadge} ${functionsBadge} ${linesBadge}
 | --- | --- | --- | --- |
 ${generateCoverageSummaryRow(averageCoverage)}
 
-## Project Coverage Details
+<details>
+<summary>Project Coverage Details</summary>
+
 `;
     if (projectCoverages.length === 0) {
-        report += '\nNo projects with coverage data found.\n';
+        report += 'No projects with coverage data found.\n';
     }
     else {
         for (const projectCoverage of projectCoverages) {
             report += generateProjectCoverageDetails(projectCoverage);
         }
     }
+    report += '\n</details>';
     report += `\n\n<sub>Last updated: ${timestamp}</sub>`;
     return report;
 }

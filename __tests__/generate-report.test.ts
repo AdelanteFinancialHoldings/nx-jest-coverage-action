@@ -64,7 +64,7 @@ describe('generate-report', () => {
     expect(report).toContain('| 80% | 80% | 90% | 85% |')
 
     // Verify report contains project details
-    expect(report).toContain('## Project Coverage Details')
+    expect(report).toContain('<summary>Project Coverage Details</summary>')
     expect(report).toContain('<summary>project-a</summary>')
     expect(report).toContain('<summary>project-b</summary>')
     expect(report).toContain('| 90% | 90% | 93.33% | 90% |') // project-a coverage
