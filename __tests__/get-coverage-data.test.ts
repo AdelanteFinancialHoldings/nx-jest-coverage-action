@@ -24,9 +24,8 @@ jest.unstable_mockModule('node:fs/promises', () => fs)
 jest.unstable_mockModule('node:path', () => path)
 
 // The module being tested should be imported dynamically
-const { getProjectCoverage, calculateAverageCoverage } = await import(
-  '../src/lib/get-coverage-data'
-)
+const { getProjectCoverage, calculateAverageCoverage } =
+  await import('../src/lib/get-coverage-data')
 
 describe('get-coverage-data', () => {
   beforeEach(() => {

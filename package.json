@@ -72,6 +72,9 @@
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "*"
   },
+  "overrides": {
+    "undici": ">=6.23.0"
+  },
   "volta": {
     "node": "24.6.0"
   }
