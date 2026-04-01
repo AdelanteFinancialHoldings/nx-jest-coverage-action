@@ -27,28 +27,32 @@ jobs:
     steps:
       - name: Checkout
         id: checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
         with:
           persist-credentials: false
 
+        - name: Setup pnpm
+          uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+          with:
+            version: latest
       - name: Setup Node.js
         id: setup-node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .node-version
           cache: npm
 
       - name: Install Dependencies
         id: npm-ci
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Setup Ruby
         id: setup-ruby
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@3ff19f5e2baf30647122352b96108b1fbe250c64
         with:
           ruby-version: ruby
 
-      - uses: licensee/setup-licensed@v1.3.2
+      - uses: licensee/setup-licensed@0d52e575b3258417672be0dff2f115d7db8771d8
         with:
           version: 4.x
           github_token: ${{ secrets.GITHUB_TOKEN }}
