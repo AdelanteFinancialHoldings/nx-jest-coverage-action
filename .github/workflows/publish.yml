@@ -12,9 +12,9 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
         with:
           persist-credentials: false
-      - uses: tgymnich/publish-github-action@v1
+      - uses: tgymnich/publish-github-action@fae5b5bf75434480dfbb2ddff6bf3b115b55fb45
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
